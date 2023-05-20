@@ -16,7 +16,7 @@ namespace WLABS_Desafio.Repositories
             try
             {
                 var formatedCep = FormatarCEP(cep);
-                var viaCepUri = $"https://viacep.com.br/ws/{cep}/json/";
+                var viaCepUri = $"https://viacep.com.br/ws/{cep}/json/"; 
                 var apiCepUri = $"https://cdn.apicep.com/file/apicep/{formatedCep}.json";
                 var awesomeApiCepUri = $"https://cep.awesomeapi.com.br/json/{cep}";
 
