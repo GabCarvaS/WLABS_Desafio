@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations;
 using WLABS_Desafio.Interfaces;
+using WLABS_Desafio.Models;
 using WLABS_Desafio.Repositories;
 
 namespace WLABS_Desafio.Controllers
@@ -18,6 +20,7 @@ namespace WLABS_Desafio.Controllers
             try
             {
                 var aux = await _enderecoRepository.getApiCepEndereco(cep);
+                Console.WriteLine(aux.ToJson());
                 return Ok(aux);
             }
             catch (KeyNotFoundException ex)
@@ -27,7 +30,7 @@ namespace WLABS_Desafio.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                return StatusCode(500, "Ocorreu um erro.");
+                return StatusCode(500, "Ocorreu um erro."); //Rever
             }
         }
     }

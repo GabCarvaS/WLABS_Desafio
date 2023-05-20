@@ -4,24 +4,34 @@ namespace DesafioWLABS.Models
 {
     public class EnderecoViaCEP
     {
-        public string? Cep { get; set; }
+        [JsonPropertyName("cep")]
+        public string? cep { get; set; }
 
-        public string? Logradouro { get; set; }
+        [JsonPropertyName("logradouro")]
+        public string? logradouro { get; set; }
 
-        public string? Complemento { get; set; }
+        [JsonPropertyName("complemento")]
+        public string? complemento { get; set; }
 
-        public string? Bairro { get; set; }
+        [JsonPropertyName("bairro")]
+        public string? bairro { get; set; }
 
-        public string? Localidade { get; set; }
+        [JsonPropertyName("localidade")]
+        public string? localidade { get; set; }
 
-        public string? Uf { get; set; }
+        [JsonPropertyName("uf")]
+        public string? uf { get; set; }
 
-        public string? Ibge { get; set; }
+        [JsonPropertyName("ibge")]
+        public string? ibge { get; set; }
 
-        public string? Gia { get; set; }
+        [JsonPropertyName("gia")]
+        public string? gia { get; set; }
 
-        public string? Ddd { get; set; }
+        [JsonPropertyName("ddd")]
+        public string? ddd { get; set; }
 
-        public string? Siafi { get; set; }
+        [JsonPropertyName("siafi")]
+        public string? siafi { get; set; }
     }
 }
