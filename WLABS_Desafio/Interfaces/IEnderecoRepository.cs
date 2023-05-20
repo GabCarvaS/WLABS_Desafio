@@ -5,8 +5,9 @@ namespace WLABS_Desafio.Interfaces
 {
     public interface IEnderecoRepository
     {
-        public Task<ApiResponse> getViaCepEndereco(string cep);
+        public Task<string> makeRequest(string cep);
+        public Task<string> getViaCepEndereco(string cep);
         public Task<string> getApiCepEndereco(string cep);
-        public Task<ApiResponse> getAwesomeApiEndereco(string cep);
+        public Task<string> getAwesomeApiEndereco(string cep);
     }
 }

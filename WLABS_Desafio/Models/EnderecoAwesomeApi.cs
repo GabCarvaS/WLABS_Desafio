@@ -13,7 +13,7 @@ namespace DesafioWLABS.Models
         [JsonPropertyName("address_name")]
         public string? AddressName { get; set; }
 
-        [JsonPropertyName("address")]
+        [JsonPropertyName("endereco")]
         public string? Address { get; set; }
 
         [JsonPropertyName("district")]
