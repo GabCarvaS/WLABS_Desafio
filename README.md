@@ -20,9 +20,9 @@ Este é o projeto de uma API desenvolvida para o desafio da WLABS. A API é resp
 
 ## Teconologias utilizadas
 
-.NET Core 7
-MongoDB
-HttpClient
+- .NET Core 7
+- MongoDB
+- HttpClient
 
 ## Funcionalidades
 
