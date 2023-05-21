@@ -30,6 +30,9 @@ A API possui as seguintes funcionalidades:
 
 - Realizar a busca de informações de endereço com base em um CEP.
 - Utilizar múltiplas APIs de consulta de CEP para obter as informações necessárias.
+  - [ViaCep](https://viacep.com.br/)
+  - [ApiCEP](https://apicep.com/api-de-consulta/)   
+  - [AwesomeAPI](https://docs.awesomeapi.com.br/api-cep)
 - Registrar logs dos erros ocorridos.
 
 ## Configuração
