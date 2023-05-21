@@ -30,7 +30,7 @@ A API possui as seguintes funcionalidades:
 
 - Realizar a busca de informações de endereço com base em um CEP.
 - Utilizar múltiplas APIs de consulta de CEP para obter as informações necessárias.
-- Registrar logs das requisições e erros ocorridos.
+- Registrar logs dos erros ocorridos.
 
 ## Configuração
 
@@ -46,7 +46,9 @@ Para executar a aplicação, siga as instruções abaixo:
 
 A API possui o seguinte endpoint:
 
-- GET /api/endereco/get?cep={cep}: Realiza a busca de informações de endereço com base no CEP fornecido.
+- GET /api/endereco/get?cep={cep} 
+
+Realiza a busca de informações de endereço com base no CEP fornecido.
 
 ## Desenvolvedore(s)
 
