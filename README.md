@@ -12,7 +12,7 @@
 
 :small_blue_diamond: [Endpoints](#Endpoints)
 
-:small_blue_diamond: [Desenvolvedores](#desenvolvedore(s))
+:small_blue_diamond: [Desenvolvedores](#desenvolvedor(es))
 
 ## Descrição do Projeto
 
@@ -50,7 +50,7 @@ A API possui o seguinte endpoint:
 
 Realiza a busca de informações de endereço com base no CEP fornecido.
 
-## Desenvolvedore(s)
+## Desenvolvedor(es)
 
 | [<img src="https://avatars.githubusercontent.com/u/58979991?v=4" width=115><br><sub>Gabriel Carvalho</sub>](https://github.com/GabCarvaS) |
 | :---------------------------------------------------------------------------------------------------------------------------------------: |
