@@ -1,10 +1,10 @@
 ﻿using DesafioWLABS.Models;
 using MongoDB.Bson;
-using System.Dynamic;
-using System.Linq;
+using MongoDB.Driver;
 using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Web.Helpers;
 using WLABS_Desafio.Interfaces;
 using WLABS_Desafio.Models;
 
@@ -12,173 +12,234 @@ namespace WLABS_Desafio.Repositories
 {
     public class EnderecoRepository : IEnderecoRepository
     {
+        LogRepository _repository = new LogRepository();
+
+        /**
+         * Centraliza a lógica dos requests
+         *
+         * @param cep CEP para o qual se deseja obter o endereço.
+         * @return Uma string contendo a resposta da requisição em formato JSON.
+         */
         public async Task<string> makeRequest(string cep)
         {
+            string resposta = "";
+
             try
             {
-                string resposta = null;
+                while (string.IsNullOrEmpty(resposta))
+                {
+                    // Tentar a primeira API
+                    try
+                    {
+                        resposta = await getViaCepEndereco(cep);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Tratar o caso de falha na requisição, quando o site estiver offline ou inacessível
+                        ApiLog log = new()
+                        {
+                            date = DateTime.Now,
+                            message = "Erro -> " + ex.Message
+                        };
+                        await _repository.createlog(log);
+                    }
 
-                // Tentar a primeira API
-                resposta = await getViaCepEndereco(cep);
+                    // Se a primeira API não responder corretamente, tentar a segunda API
+                    if (string.IsNullOrEmpty(resposta))
+                    {
+                        try
+                        {
+                            resposta = await getApiCepEndereco(cep);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Registrar a exceção no log
+                            ApiLog log = new()
+                            {
+                                date = DateTime.Now,
+                                message = "Erro -> " + ex.Message
+                            };
+                            await _repository.createlog(log);
+                        }
+                    }
 
-                // Se a primeira API não responder, tentar a segunda API
-                if (resposta == null)
-                    resposta = await getApiCepEndereco(cep);
+                    // Se a segunda API não responder corretamente, tentar a terceira API
+                    if (string.IsNullOrEmpty(resposta))
+                    {
+                        try
+                        {
+                            resposta = await getAwesomeApiEndereco(cep);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Registrar a exceção no log
+                            ApiLog log = new()
+                            {
+                                date = DateTime.Now,
+                                message = "Erro -> " + ex.Message
+                            };
+                            await _repository.createlog(log);
+                        }
+                    }
 
-                // Se a segunda API não responder, tentar a terceira API
-                if (resposta == null)
-                    resposta = await getAwesomeApiEndereco(cep);
+                    // Se todas as tentativas falharem
+                    if (string.IsNullOrEmpty(resposta))
+                    {
+                        resposta = $"Nenhum dado encontrado para o cep {cep}";
+                    }
+                }
 
-                // Retornar a resposta para o controller
+                // Retornar a resposta para o controller              
                 return resposta;
             }
-            catch()
+            // Exceção não esperada
+            catch (Exception ex)
             {
-                throw;
-            }
-            catch(Exception ex)
-            {
-                return ex.Message;
+                // Registrar a exceção no log
+                ApiLog log = new()
+                {
+                    date = DateTime.Now,
+                    message = "Erro ao processar a requisição: " + ex.Message
+                };
+
+                await _repository.createlog(log);
+
+                resposta = "Erro ao processar a requisição";
+
+                // Retornar a resposta para o controller              
+                return resposta;
             }
         }
 
+
+        /**
+         * Faz uma requisição à primeira API de endereços (ViaCEP) com base no CEP fornecido.
+         *
+         * @param cep CEP para o qual se deseja obter o endereço.
+         * @return Uma string contendo a resposta da requisição em formato JSON.
+         */
         public async Task<string> getViaCepEndereco(string cep)
         {
             try
             {
-                var viaCepUri = $"https://viacep.com.br/ws/{cep}/json/"; 
-
-                var request = new HttpRequestMessage(HttpMethod.Get, viaCepUri);
+                var url = $"https://viacep.com.br/ws/{cep}/json/";
 
                 string jsonString = "";
                 using (var client = new HttpClient())
                 {
-                    var responseBrasilApi = await client.SendAsync(request);
-                    var contentResp = await responseBrasilApi.Content.ReadAsStringAsync();
-                    var objResponse = JsonSerializer.Deserialize<EnderecoViaCEP>(contentResp);
+                    client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
 
-                    if (responseBrasilApi.StatusCode != HttpStatusCode.OK || objResponse.cep == null)
+                    var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url));
+                    if (response.IsSuccessStatusCode)
                     {
-                        var data = new
+                        var responseApi = await response.Content.ReadFromJsonAsync<EnderecoViaCEP>();
+                        if (responseApi == null || responseApi.cep != null)
                         {
-                            code = 404,
-                            data = objResponse
-                        };
-                        // Serializar o objeto em uma string JSON
-                        jsonString = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-                    }
-                    else
-                    {
-                        var data = new
-                        {
-                            code = responseBrasilApi.StatusCode,
-                            data = objResponse
-                        };
-                        // Serializar o objeto em uma string JSON
-                        jsonString = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+                            // Serializar o objeto em uma string JSON
+                            jsonString = JsonSerializer.Serialize(responseApi, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+                        }
                     }
                 }
-                return jsonString;               
-            }
-            catch (Exception e)
-            {
-                throw;
-            }
-        }
-
-        public async Task<string> getAwesomeApiEndereco(string cep)
-        {
-            try
-            {
-                var awesomeApiCepUri = $"https://cep.awesomeapi.com.br/json/{cep}";
-
-                var request = new HttpRequestMessage(HttpMethod.Get, awesomeApiCepUri);
-
-                string jsonString = "";
-                using (var client = new HttpClient())
-                {
-                    var responseBrasilApi = await client.SendAsync(request);
-                    var contentResp = await responseBrasilApi.Content.ReadAsStringAsync();
-                    var objResponse = JsonSerializer.Deserialize<EnderecoAwesomeApi>(contentResp);
-
-                    if (responseBrasilApi.StatusCode != HttpStatusCode.OK || objResponse.cep == null)
-                    {
-                        throw new Exception("erro");
-                    }
-
-                    var data = new
-                    {
-                        code = responseBrasilApi.StatusCode,
-                        data = objResponse
-                    };
-
-                    // Serializar o objeto em uma string JSON
-                    jsonString = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-
-                   // Console.WriteLine(jsonString);
-                }
-
                 return jsonString;
             }
             catch (Exception e)
             {
-                throw;
+                throw new Exception($"func: getViaCepEndereco | msg: {e.Message}");
             }
         }
 
+        /**
+         * Faz uma requisição à segunda API de endereços (ApiCEP) com base no CEP fornecido.
+         *
+         * @param cep CEP para o qual se deseja obter o endereço.
+         * @return Uma string contendo a resposta da requisição em formato JSON.
+         */
         public async Task<string> getApiCepEndereco(string cep)
         {
             try
             {
                 var formatedCep = FormatarCEP(cep);
-                var apiCepUri = $"https://cdn.apicep.com/file/apicep/{formatedCep}.json";
 
-                var request = new HttpRequestMessage(HttpMethod.Get, apiCepUri);
+                var url = $"https://cdn.apicep.com/file/apicep/{formatedCep}.json";
 
                 string jsonString = "";
                 using (var client = new HttpClient())
                 {
-                    var responseBrasilApi = await client.SendAsync(request);
-                    var contentResp = await responseBrasilApi.Content.ReadAsStringAsync();
-                    var objResponse = JsonSerializer.Deserialize<EnderecoApiCep>(contentResp);
+                    client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
 
-                    if (responseBrasilApi.StatusCode != HttpStatusCode.OK || objResponse.cep == null)
+                    var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url));
+                    if (response.IsSuccessStatusCode)
                     {
-                        throw new Exception("erro");
-                    }
-
-                    var data = new
-                    {
-                        code = responseBrasilApi.StatusCode,
-                        data = objResponse
+                        var responseApi = await response.Content.ReadFromJsonAsync<EnderecoApiCep>();
+                        if (responseApi == null || responseApi.Code != null)
+                        {
+                            // Serializar o objeto em uma string JSON
+                            jsonString = JsonSerializer.Serialize(responseApi, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+                        }
                     };
-
-                    // Serializar o objeto em uma string JSON
-                    jsonString = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
-
-                    //Console.WriteLine(jsonString);
                 }
-
                 return jsonString;
             }
             catch (Exception e)
             {
-                throw;
+                throw new Exception($"func: getApiCepEndereco | msg: {e.Message}");
             }
         }
 
+        /**
+         * Faz uma requisição à terceira API de endereços (AwesomeApi) com base no CEP fornecido.
+         *
+         * @param cep CEP para o qual se deseja obter o endereço.
+         * @return Uma string contendo a resposta da requisição em formato JSON.
+         */
+        public async Task<string> getAwesomeApiEndereco(string cep)
+        {
+            try
+            {
+                var url = $"https://cep.awesomeapi.com.br/json/{cep}";
+
+                string jsonString = "";
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("utf-8"));
+
+                    var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url));
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseApi = await response.Content.ReadFromJsonAsync<EnderecoAwesomeApi>();
+                        if (responseApi == null || responseApi.Cep != null)
+                        {
+                            // Serializar o objeto em uma string JSON
+                            jsonString = JsonSerializer.Serialize(responseApi, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+                        }
+                    }
+                }
+                return jsonString;
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"func: getAwesomeApiEndereco | msg: {e.Message}");
+            }
+        }
+
+        /**
+         * Formata o CEP com o formato correto.
+         *
+         * @param cep CEP a ser formatado.
+         * @return O CEP formatado.
+         */
         private string FormatarCEP(string cep)
         {
             if (cep.Length == 8)
             {
+                // Formato xxxxx-xxx
                 return cep.Insert(5, "-");
             }
             else
             {
-                // Se o CEP não tiver 8 caracteres, pode-se optar por retornar o CEP original ou lançar uma exceção, dependendo dos requisitos do seu programa.
+                // Se o CEP não tiver 8 caracteres, retorna o CEP original
                 return cep;
             }
         }
-
     }
 }

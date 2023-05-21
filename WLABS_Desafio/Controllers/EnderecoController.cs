@@ -15,15 +15,23 @@ namespace WLABS_Desafio.Controllers
     {
         private readonly IEnderecoRepository _enderecoRepository = new EnderecoRepository();
 
+        /**
+         * Obtém o endereço correspondente a um determinado CEP.
+         *
+         * @param cep CEP para o qual se deseja obter o endereço.
+         * @return Uma lista de strings contendo a resposta da requisição em formato JSON.
+        */
         [HttpGet("get")]
         public async Task<ActionResult<IEnumerable<string>>> searchByKey(string cep)
         {
-            if(!ValidarCEP(cep)) return StatusCode(404, $"CEP Inválido");
+            // Validar o CEP informado
+            if (!ValidarCEP(cep)) return StatusCode(404, $"CEP Inválido");
 
             try
             {
-                var res = await _enderecoRepository.makeRequest(cep);               
-                 
+                // Fazer a requisição para obter o endereço
+                var res = await _enderecoRepository.makeRequest(cep);
+
                 return Ok(res);
             }
 
@@ -33,6 +41,13 @@ namespace WLABS_Desafio.Controllers
                 return StatusCode(500, "Não foi possivel realizar a solicitação.");
             }
         }
+
+        /**
+         * Valida se um CEP é válido.
+         *
+         * @param cep CEP a ser validado.
+         * @return True se o CEP for válido, False caso contrário.
+        */
         private bool ValidarCEP(string cep)
         {
             // Remover caracteres não numéricos do CEP
