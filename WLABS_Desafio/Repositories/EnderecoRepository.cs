@@ -88,7 +88,6 @@ namespace WLABS_Desafio.Repositories
                         resposta = $"Nenhum dado encontrado para o cep {cep}";
                     }
                 }
-
                 // Retornar a resposta para o controller              
                 return resposta;
             }
